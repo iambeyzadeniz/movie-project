@@ -98,7 +98,7 @@ function NavBar({ children }) {
 function NumResult({ movies }) {
   return (
     <p className="num-results">
-      Foundd <strong>{movies.length}</strong> results
+      Founddd <strong>{movies.length}</strong> results
     </p>
   );
 
@@ -190,7 +190,7 @@ function Movie({ movie }) {
     <h3>{movie.Title}</h3>
     <div>
       <p>
-        <span>🗓</span>
+        <span>🗓bb</span>
         <span>{movie.Year}</span>
       </p>
     </div>
