@@ -73,7 +73,7 @@ export default function App() {
         <NumResult movies={movies} />
       </NavBar>
       <Main >
-        <Box  >
+        <Box >
           <MovieList movies={movies} />
         </Box>
         <Box>
@@ -98,7 +98,7 @@ function NavBar({ children }) {
 function NumResult({ movies }) {
   return (
     <p className="num-results">
-      Found <strong>{movies.length}</strong> results
+      Foundd <strong>{movies.length}</strong> results
     </p>
   );
 
