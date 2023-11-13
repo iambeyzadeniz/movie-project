@@ -190,7 +190,7 @@ function Movie({ movie }) {
     <h3>{movie.Title}</h3>
     <div>
       <p>
-        <span>🗓bb</span>
+        <span>🗓</span>
         <span>{movie.Year}</span>
       </p>
     </div>
