@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import StarRating from "./StarRating";
+import { useKey } from "./useKey";
+import { useLocalStorageState } from "./useLocalStorageState";
 import { useMovies } from "./useMovies";
 //github token  
 
@@ -58,14 +60,15 @@ const KEY = "7c302779";
 export default function App() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  const { movies, isLoading, error } = useMovies(query, handleCloseMovie);
+  const { movies, isLoading, error } = useMovies(query);
+  const [watched, setWatched] = useLocalStorageState([], "watched");
   // const [watched, setWatched] = useState([]);
-  const [watched, setWatched] = useState(function () {
-    const storedValue = localStorage.getItem("watched");
+  // const [watched, setWatched] = useState(function () {
+  //   const storedValue = localStorage.getItem("watched");
 
-    return JSON.parse(storedValue) || [];
+  //   return JSON.parse(storedValue) || [];
 
-  });
+  // });
 
 
   function handleSelectMovie(id) {
@@ -83,11 +86,6 @@ export default function App() {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
 
-
-  useEffect(function () {
-    localStorage.setItem("watched", JSON.stringify(watched));
-
-  }, [watched]);
 
 
 
@@ -176,22 +174,29 @@ function Logo() {
 function Search({ query, setQuery }) {
   const inputEl = useRef(null);
 
-  useEffect(function () {
+  useKey("Enter", function () {
+    if (document.activeElement === inputEl.current)
+      return;
+    inputEl.current.focus();
+    setQuery("");
+  });
 
-    function callback(e) {
-      if (document.activeElement === inputEl.current)
-        return;
+  // useEffect(function () {
 
-      if (e.code === "Enter") {
-        inputEl.current.focus();
-        setQuery("");
+  //   function callback(e) {
+  //     if (document.activeElement === inputEl.current)
+  //       return;
 
-      }
-    }
-    document.addEventListener("keydown", callback);
-    return () => document.removeEventListener("keydown", callback);
+  //     if (e.code === "Enter") {
+  //       inputEl.current.focus();
+  //       setQuery("");
 
-  }, [setQuery]);
+  //     }
+  //   }
+  //   document.addEventListener("keydown", callback);
+  //   return () => document.removeEventListener("keydown", callback);
+
+  // }, [setQuery]);
 
   return (
     <input
@@ -311,24 +316,10 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
+
+
   //useRef rbileşenlerin render durumlarından bağımsız olarak aynı değeri korur. Bu, genellikle DOM elemanlarına veya başka bir bileşende bulunan verilere erişim sağlamak için kullanılır.
-  useEffect(function () {
-    if (userRating) countRef.current++;
-  }, [userRating])
-  useEffect(function () {
-    function callback(e) {
-      if (e.code === "Escape") {
-        onCloseMovie();
-      }
-    }
-    document.addEventListener("keydown", callback);
-    return function () {
-      document.removeEventListener("keydown", callback);
-    };
-
-
-  }, [])
-
+  useKey("Escape", onCloseMovie);
 
   useEffect(function () {
     async function getMovieDetails() {
