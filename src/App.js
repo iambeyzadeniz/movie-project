@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StarRating from "./StarRating";
+import { useMovies } from "./useMovies";
 //github token  
 
 const tempMovieData = [
@@ -56,11 +57,8 @@ const average = (arr) =>
 const KEY = "7c302779";
 export default function App() {
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-
+  const { movies, isLoading, error } = useMovies(query, handleCloseMovie);
   // const [watched, setWatched] = useState([]);
   const [watched, setWatched] = useState(function () {
     const storedValue = localStorage.getItem("watched");
@@ -93,43 +91,7 @@ export default function App() {
 
 
 
-  useEffect(function () {
 
-    const controller = new AbortController();
-    async function fetchMovies() {
-      try {
-        setIsLoading(true);
-        setError("");
-        const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`, { signal: controller.signal });
-        console.log(res.ok);
-        if (!res.ok)
-          throw new Error("Something went wrong with fetching movies");
-        const data = await res.json();
-        if (data.Response === "False") throw new Error("Movie  not found");
-        setMovies(data.Search);
-        setError("");
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error(err.message);
-          setError(err.message);
-        }
-
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    if (!query.length) {
-      setMovies([]);
-      setError("");
-      return;
-    }
-    handleCloseMovie();
-    fetchMovies();
-
-    return function () {
-      controller.abort();
-    }
-  }, [query]);
 
 
 
@@ -203,8 +165,33 @@ function Logo() {
   );
 }
 
-function Search({ query, setQuery }) {
 
+//document.querySelector(".search"), belirtilen sınıfa sahip ilk HTML öğesini seçer. Burada, .search sınıfına sahip olan arama kutusu seçilir.
+// el.focus(), seçilen HTML öğesine odaklanmayı sağlar.Aşağıda ki gibi kullanabiliriz ya da useRef ile;
+// useEffect(function () {
+//   const el = document.querySelector(".search");
+//   console.log(el);
+//   el.focus();
+// }, []);
+function Search({ query, setQuery }) {
+  const inputEl = useRef(null);
+
+  useEffect(function () {
+
+    function callback(e) {
+      if (document.activeElement === inputEl.current)
+        return;
+
+      if (e.code === "Enter") {
+        inputEl.current.focus();
+        setQuery("");
+
+      }
+    }
+    document.addEventListener("keydown", callback);
+    return () => document.removeEventListener("keydown", callback);
+
+  }, [setQuery]);
 
   return (
     <input
@@ -213,6 +200,7 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputEl}
     />
   );
 }
@@ -291,6 +279,8 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
+
+  const countRef = useRef(0);
   const {
     Title: title,
     Year: year,
@@ -315,11 +305,16 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      countRatingDecisions: countRef.current,
     }
 
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
+  //useRef rbileşenlerin render durumlarından bağımsız olarak aynı değeri korur. Bu, genellikle DOM elemanlarına veya başka bir bileşende bulunan verilere erişim sağlamak için kullanılır.
+  useEffect(function () {
+    if (userRating) countRef.current++;
+  }, [userRating])
   useEffect(function () {
     function callback(e) {
       if (e.code === "Escape") {
@@ -466,3 +461,42 @@ function WatchedMovie({ movie, onDeleteWatched }) {
     </li>
   );
 }
+
+
+
+
+// ******** useRef genellikle şu durumlarda kullanılır:
+
+// DOM Elemanlarına Erişim:
+
+// javascript
+// Copy code
+// const inputRef = useRef(null);
+
+// useEffect(() => {
+//   // input elemanına odaklanma
+//   inputRef.current.focus();
+// }, []);
+
+// return <input ref={inputRef} />;
+// Yukarıdaki örnekte, useRef ile bir input elemanına erişim sağlanır ve useEffect içinde bu elemana odaklanma işlemi gerçekleştirilir.
+
+// Bileşenler Arası İletişim:
+
+// javascript
+// Copy code
+// const childComponentRef = useRef(null);
+
+// return <ChildComponent ref={childComponentRef} />;
+// Yukarıdaki örnekte, bir ana bileşen, alt bileşene bir referans gönderir ve alt bileşende bu referans üzerinden ana bileşenin metotlarına veya durumuna erişim sağlanabilir.
+
+// Functional Component'lerde Değerin Saklanması:
+
+// javascript
+// Copy code
+// const counter = useRef(0);
+
+// // counter.current, değeri korur ve re-render sırasında değişmez
+// Yukarıdaki örnekte, bir sayacın değeri, useRef kullanılarak bileşenin re - render olduğunda sıfırlanmayacak şekilde korunur.
+
+
